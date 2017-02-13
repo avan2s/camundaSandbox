@@ -1,6 +1,7 @@
 package org.camunda.training;
 
 import org.apache.ibatis.logging.LogFactory;
+import org.camunda.bpm.engine.history.HistoricActivityInstance;
 import org.camunda.bpm.engine.history.HistoricTaskInstance;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.task.Task;
@@ -71,7 +72,9 @@ public class InMemoryH2Test {
         System.out.println("\n\n\n\n\n Task is completed:");
 
         this.seeVariables(processInstance);
-        System.out.println("finished");
+
+        List<HistoricActivityInstance> list = processEngine().getHistoryService().createHistoricActivityInstanceQuery().finished().processInstanceId(processInstance.getId()).list();
+        System.out.println("Finished");
 
     }
 
