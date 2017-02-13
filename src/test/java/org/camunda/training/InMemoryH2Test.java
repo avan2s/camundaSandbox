@@ -54,14 +54,22 @@ public class InMemoryH2Test {
     public void testHappyPath() {
         VariableMap instanceVariables = Variables.createVariables().putValue("v1", "value of v1");
         ProcessInstance processInstance = processEngine().getRuntimeService().startProcessInstanceByKey(PROCESS_DEFINITION_KEY, instanceVariables);
+        processEngine().getRuntimeService().setVariableLocal(processInstance.getId(), "local instance variable", "some value");
         List<HistoricTaskInstance> historicTaskInstances = processEngine().getHistoryService().createHistoricTaskInstanceQuery().finished().processInstanceId(processInstance.getId()).list();
 
         List<Task> taskList = this.seeVariables(processInstance);
         String userTaskAid = taskList.get(0).getId();
         processEngine().getTaskService().claim(userTaskAid, "Hans");
         Task taskAssignedToHans = processEngine().getTaskService().createTaskQuery().processInstanceId(processInstance.getId()).taskAssignee("Hans").singleResult();
-        processEngine().getTaskService().complete(userTaskAid);
-        System.out.println("\n\n\n\n\n");
+
+        Map<String, Object> changedVariablesInsideTask = Variables.putValue("v1", "v1 is changed").putValue("new variable created by task", "new variable's value");
+        processEngine().getRuntimeService().setVariableLocal(taskAssignedToHans.getExecutionId(), "new local instance variable created in " + taskAssignedToHans.getName(), "another value");
+        System.out.println("\n\n\n\n\nLocal Variable for " + taskAssignedToHans.getName() + " is inserted");
+        this.seeVariables(processInstance);
+
+        processEngine().getTaskService().complete(userTaskAid, changedVariablesInsideTask);
+        System.out.println("\n\n\n\n\n Task is completed:");
+
         this.seeVariables(processInstance);
         System.out.println("finished");
 
