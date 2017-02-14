@@ -1,6 +1,7 @@
 package org.camunda.training;
 
 import org.apache.ibatis.logging.LogFactory;
+import org.camunda.bpm.dmn.engine.DmnDecisionTableResult;
 import org.camunda.bpm.engine.history.HistoricActivityInstance;
 import org.camunda.bpm.engine.history.HistoricTaskInstance;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
@@ -51,8 +52,23 @@ public class InMemoryH2Test {
     }
 
     @Test
-    @Deployment(resources = "process.bpmn")
+    @Deployment(resources = {"process.bpmn"})
     public void testHappyPath() {
+        org.camunda.bpm.engine.repository.Deployment dmn = processEngine()
+                .getRepositoryService()
+                .createDeployment()
+                .name("decision1")
+                .addClasspathResource("META-INF/dmn/dinnerDecisions.dmn").deploy();
+
+        VariableMap variables = Variables.createVariables()
+                .putValue("season", "Spring")
+                .putValue("guestCount", 10);
+
+        DmnDecisionTableResult dishDecisionResult = processEngine().getDecisionService().evaluateDecisionTableByKey("dish", variables);
+        String desiredDish = dishDecisionResult.getSingleEntry();
+
+        System.out.println("Desired dish: " + desiredDish);
+
         VariableMap instanceVariables = Variables.createVariables().putValue("v1", "value of v1");
         ProcessInstance processInstance = processEngine().getRuntimeService().startProcessInstanceByKey(PROCESS_DEFINITION_KEY, instanceVariables);
         processEngine().getRuntimeService().setVariableLocal(processInstance.getId(), "local instance variable", "some value");
